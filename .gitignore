@@ -12,9 +12,8 @@ override.tf.json
 # Helm
 *.tgz
 
-# Local K8s
-kubeconfig
-kind-config.yaml
+# Local K8s (personal overrides only — shared config lives in scripts/kind-config.yaml)
+/kind-config.local.yaml
 
 # OS / IDE
 .DS_Store
