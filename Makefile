@@ -1,13 +1,13 @@
-.PHONY: help pre-commit tooling-build tooling-shell helm-lint helm-template \
+.PHONY: help pre-commit tooling-pull tooling-shell helm-lint helm-template \
         setup-kind tf-init tf-plan tf-apply helm-install-staging
 
-TOOLING_IMAGE ?= infra-golden-path-tooling:local
+TOOLING_IMAGE ?= ghcr.io/france-berteloot/docker-tooling:latest
 NAMESPACE ?= demo-app-staging
 
 help:
 	@echo "Local developer targets:"
 	@echo "  pre-commit           Run all pre-commit hooks (same as CI)"
-	@echo "  tooling-build        Build CI tooling Docker image"
+	@echo "  tooling-pull         Pull shared CI tooling image from GHCR"
 	@echo "  tooling-shell        Shell inside tooling image"
 	@echo "  helm-lint            Lint demo-app chart"
 	@echo "  helm-template        Render demo-app chart (staging values)"
@@ -22,10 +22,10 @@ help:
 pre-commit:
 	pre-commit run --all-files
 
-tooling-build:
-	docker build -f docker/tooling/Dockerfile -t $(TOOLING_IMAGE) .
+tooling-pull:
+	docker pull $(TOOLING_IMAGE)
 
-tooling-shell: tooling-build
+tooling-shell: tooling-pull
 	docker run --rm -it -v "$(CURDIR):/work" -w /work $(TOOLING_IMAGE) bash
 
 helm-lint:

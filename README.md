@@ -4,6 +4,23 @@ Petit repo d'infra pour provisionner un namespace Kubernetes et déployer une ap
 
 L'idée : modéliser un flux Platform classique (IaC → delivery → contrôles qualité) sur un périmètre volontairement réduit. **Le déploiement se fait uniquement en CI/CD** ; en local, seuls les hooks pre-commit sont attendus.
 
+## Table des matières
+
+- [Contexte](#contexte)
+- [Architecture](#architecture)
+- [Prérequis (local)](#prérequis-local)
+- [Démarrage rapide](#démarrage-rapide)
+- [Flux CI/CD](#flux-cicd)
+- [Structure du repo](#structure-du-repo)
+- [Debug local (optionnel)](#debug-local-optionnel)
+- [Gouvernance](#gouvernance)
+- [Choix de conception](#choix-de-conception)
+- [Évolution : phase 1 → phase 2](#évolution--phase-1-mono-repo--phase-2-multi-repo)
+- [Extension cloud](#extension-cloud)
+- [Commandes utiles](#commandes-utiles)
+- [Améliorations possibles](#améliorations-possibles)
+- [Licence](#licence)
+
 ## Contexte
 
 Cas d'usage visé :
@@ -14,7 +31,7 @@ Cas d'usage visé :
 |--------|------|
 | **Terraform** | Module `platform` : namespace, ServiceAccount, labels |
 | **Helm** | Chart `demo-app` : Deployment + Service, values `staging` |
-| **CI** | Image tooling Docker + `pre-commit` + kubeconform + package chart |
+| **CI** | `pre-commit` + kubeconform + package chart |
 | **CD** | kind éphémère + `terraform apply` + `helm upgrade` + smoke test |
 | **Gouvernance** | CODEOWNERS, Renovate, conventional commits, pre-commit |
 
@@ -87,7 +104,7 @@ Ce repo n'a pas de vrais environnements séparés (pas de dev/prod persistants).
 | Événement | Actions |
 |-----------|---------|
 | Pull request | pre-commit + kubeconform |
-| Push `main` | idem + build/push image tooling GHCR + package chart |
+| Push `main` | idem + package chart |
 
 ### CD — déploiement
 
@@ -107,6 +124,8 @@ Déclenchée par `workflow_run` après succès de la CI (pas en parallèle).
 
 Le cluster kind est détruit à la fin du job — c'est un environnement éphémère de test d'intégration.
 
+> **Image tooling** — les jobs CI/CD consomment l'image [`docker-tooling`](https://github.com/france-berteloot/docker-tooling) (`ghcr.io/france-berteloot/docker-tooling:latest`).
+
 ## Structure du repo
 
 ```
@@ -115,7 +134,6 @@ Le cluster kind est détruit à la fin du job — c'est un environnement éphém
 │   ├── modules/platform/          # Namespace, SA, labels
 │   └── environments/local/        # Stack kind (utilisée en CI/CD)
 ├── helm/charts/demo-app/          # Chart nginx, values-staging.yaml
-├── docker/tooling/                # Image CI (Terraform, Helm, pre-commit, kubeconform)
 ├── scripts/
 │   ├── kind-config.yaml           # Config kind partagée CI + debug local
 │   └── setup-kind.sh
@@ -127,41 +145,6 @@ Le cluster kind est détruit à la fin du job — c'est un environnement éphém
 ├── renovate.json
 └── Makefile
 ```
-
-## CI — image tooling
-
-La CI s'appuie sur une **image tooling** (`docker/tooling/Dockerfile`) publiée sur **GHCR** :
-
-- Terraform, Helm, kubeconform, pre-commit — versions figées
-- hooks pre-commit pré-installés au build
-
-```mermaid
-flowchart TD
-  subgraph main [Push sur main]
-    B1[Build image] --> P1[Push ghcr.io/.../tooling:latest]
-    P1 --> R1[docker pull + tag tooling:ci]
-  end
-  subgraph pr [Pull request]
-    P2[docker pull depuis GHCR] -->|Dockerfile inchangé| R2[tag tooling:ci]
-    P2 -->|pull impossible ou Dockerfile modifié| B2[Build local load]
-    B2 --> R2
-  end
-  R1 --> RUN[docker run -v workspace:/work]
-  R2 --> RUN
-  RUN --> CHECKS[pre-commit, kubeconform, ...]
-```
-
-> **Premier push** : le package GHCR sera créé automatiquement. Sur un repo public, rends-le visible : *GitHub → Packages → infra-golden-path-tooling → Package settings → Change visibility*.
-
-Reproduire les checks CI en local :
-
-```bash
-make tooling-build
-docker run --rm -v "$(pwd):/work" -w /work infra-golden-path-tooling:local \
-  pre-commit run --all-files
-```
-
-Les commits suivent [Conventional Commits](https://www.conventionalcommits.org/) (hook local `commit-msg`, non rejoué en CI).
 
 ## Debug local (optionnel)
 
@@ -187,6 +170,7 @@ kubectl get all -n demo-app-staging
 - **CODEOWNERS** — revue requise sur `terraform/`, `helm/`, `.github/`
 - **Renovate** — mises à jour des providers Terraform et GitHub Actions
 - **Labels** — appliqués côté Terraform et Helm pour rester cohérents
+- **Conventional Commits** — hook local `commit-msg` ([Conventional Commits](https://www.conventionalcommits.org/)), non rejoué en CI
 
 ## Choix de conception
 
@@ -196,7 +180,6 @@ kubectl get all -n demo-app-staging
 - **Un seul environnement nommé `staging`** — pas de dev/prod ici : le cluster kind est éphémère ; `staging` sert de label conventionnel pour le pipeline.
 - **Helm values par environnement** — un fichier `values-staging.yaml` ; en cloud on ajouterait `values-dev.yaml`, `values-prod.yaml`, etc.
 - **Pre-commit = source de vérité locale** — les checks locaux et CI passent par le même fichier ; la CI ajoute kubeconform, le packaging et le deploy.
-- **Image tooling sur GHCR** — outils figés dans l'image, code monté via volume.
 - **Garde-fous légers** — pas d'ArgoCD, pas de policy engine : hors scope volontaire.
 - **Terraform ≠ Helm** — le socle plateforme (namespace, SA, labels) et la livraison applicative (Deployment, Service) ont des cycles de vie et des ownerships différents ; on ne déploie pas le chart depuis Terraform.
 
@@ -214,7 +197,7 @@ Tout vit ici pour itérer vite :
 |---------|-------------|---------------|
 | `terraform/modules/platform/` | Module socle K8s | → repo `terraform-module-platform` |
 | `helm/charts/demo-app/` | Chart applicatif | → repo `helm-chart-demo-app` |
-| `docker/tooling/` | Image CI partagée | → repo `docker-tooling` |
+| [docker-tooling](https://github.com/france-berteloot/docker-tooling) | Image CI (repo externe) | ✅ extrait |
 | `.github/workflows/` + values | Wiring CD staging | → repo `infra-staging` (ou équivalent) |
 
 ### Phase 2 — vision cible (bonnes pratiques platform)
@@ -251,9 +234,9 @@ flowchart TB
 - **Permissions** — accès au module IAM/cluster ≠ accès au chart applicatif.
 - **Pas de Helm dans Terraform** — Terraform pose le socle ; Helm (ou GitOps) livre l'app.
 
-**Ordre d'extraction recommandé** (quand le mono-repo est validé) :
+**Ordre d'extraction recommandé** :
 
-1. `docker-tooling` — bénéfice immédiat, peu de couplage
+1. ~~`docker-tooling`~~ — fait
 2. `terraform-module-platform` — module publié (registry Git ou Terraform Cloud)
 3. `helm-chart-demo-app` — chart packagé sur GHCR (OCI)
 4. Ce repo devient `infra-staging` — workflows CD + `values-staging.yaml` + références versionnées
@@ -279,14 +262,13 @@ Le chart Helm et les workflows CI ne changent pas — seule la cible de déploie
 ```bash
 make help
 make pre-commit
-make tooling-build
 make helm-lint
 make helm-template
 ```
 
 ## Améliorations possibles
 
-- **Phase 2 multi-repo** — extraction `docker-tooling`, `terraform-module-platform`, `helm-chart-demo-app` (voir [Évolution](#évolution--phase-1-mono-repo--phase-2-multi-repo)).
+- **Phase 2 multi-repo** — extraction `terraform-module-platform`, `helm-chart-demo-app` (`docker-tooling` déjà extrait).
 - **Environnements cloud** — stacks `terraform/environments/<env>` avec clusters persistants (dev, staging, prod).
 - **GitOps** — ArgoCD/Flux pour reconcilier le cluster à partir du chart packagé (phase 3).
 - **Renovate cross-repos** — bump automatique des versions module/chart dans les repos infra.
