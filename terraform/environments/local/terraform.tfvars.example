@@ -1,0 +1,8 @@
+# Copy to terraform.tfvars for optional local debug only.
+# CI/CD uses fixed values: namespace=demo-app-staging, environment=staging (see .github/workflows/cd.yml).
+namespace   = "demo-app-staging"
+environment = "staging"
+team        = "platform"
+
+# kind context is usually "kind-golden-path"
+# kubeconfig_context = "kind-golden-path"

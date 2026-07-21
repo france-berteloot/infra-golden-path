@@ -1,0 +1,32 @@
+replicaCount: 1
+
+nameOverride: ""
+fullnameOverride: ""
+
+environment: staging
+team: platform
+
+image:
+  repository: nginx
+  tag: "1.27-alpine"
+  pullPolicy: IfNotPresent
+
+serviceAccount:
+  create: false
+  name: demo-app
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

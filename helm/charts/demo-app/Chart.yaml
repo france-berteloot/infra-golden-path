@@ -1,0 +1,6 @@
+apiVersion: v2
+name: demo-app
+description: Minimal demo application (nginx) for the infra golden path portfolio
+type: application
+version: 0.1.0
+appVersion: "1.27"

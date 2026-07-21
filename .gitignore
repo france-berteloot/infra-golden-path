@@ -1,0 +1,23 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.terraform.lock.hcl
+crash.log
+override.tf
+override.tf.json
+
+# Helm
+*.tgz
+
+# Local K8s
+kubeconfig
+kind-config.yaml
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp

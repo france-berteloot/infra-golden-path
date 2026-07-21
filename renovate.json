@@ -1,0 +1,28 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":semanticCommitTypeAll(chore)"
+  ],
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions",
+      "automerge": false
+    },
+    {
+      "matchManagers": ["terraform"],
+      "groupName": "Terraform providers",
+      "automerge": false
+    },
+    {
+      "matchManagers": ["helmv3"],
+      "enabled": false
+    }
+  ],
+  "terraform": {
+    "fileMatch": ["\\.tf$"]
+  }
+}

@@ -1,0 +1,7 @@
+# Default reviewer — solo maintainer (phase 1 mono-repo).
+* @france-berteloot
+
+/terraform/ @france-berteloot
+/helm/ @france-berteloot
+/docker/ @france-berteloot
+/.github/ @france-berteloot
