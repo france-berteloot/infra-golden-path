@@ -63,7 +63,7 @@ jobs:
 
       - name: Terraform apply
         run: |
-          docker run --rm \
+          docker run --rm --network host \
             -v "${{ github.workspace }}:/work" \
             -v "${HOME}/.kube:/root/.kube:ro" \
             -w /work \
@@ -77,7 +77,7 @@ jobs:
 
       - name: Helm deploy
         run: |
-          docker run --rm \
+          docker run --rm --network host \
             -v "${{ github.workspace }}:/work" \
             -v "${HOME}/.kube:/root/.kube:ro" \
             -w /work \
