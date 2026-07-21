@@ -67,7 +67,7 @@ jobs:
             tooling:ci \
             bash -lc 'mkdir -p dist && helm package helm/charts/demo-app -d dist && ls -la dist/'
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         if: github.event_name == 'push'
         with:
           name: helm-chart
