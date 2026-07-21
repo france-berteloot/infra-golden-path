@@ -1,10 +1,9 @@
 name: CD
 
 on:
-  pull_request:
-    branches: [main]
-  push:
-    branches: [main]
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
 
 permissions:
   contents: read
@@ -19,9 +18,12 @@ env:
 jobs:
   deploy-staging:
     name: Deploy to kind (staging)
+    if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - uses: docker/setup-buildx-action@v4
 

@@ -72,7 +72,7 @@ make pre-commit
 
 La **CI** (`.github/workflows/ci.yml`) exécute pre-commit, kubeconform et package le chart.
 
-La **CD** (`.github/workflows/cd.yml`) crée un cluster kind éphémère, applique Terraform, déploie Helm et lance un smoke test HTTP.
+La **CD** (`.github/workflows/cd.yml`) se lance **uniquement si la CI réussit**, puis crée un cluster kind éphémère, applique Terraform, déploie Helm et lance un smoke test HTTP.
 
 Aucun déploiement manuel n'est nécessaire.
 
@@ -91,10 +91,11 @@ Ce repo n'a pas de vrais environnements séparés (pas de dev/prod persistants).
 
 ### CD — déploiement
 
+Déclenchée par `workflow_run` après succès de la CI (pas en parallèle).
+
 | Événement | Actions |
 |-----------|---------|
-| Pull request | kind → terraform apply → helm upgrade → smoke test |
-| Push `main` | idem (cluster kind éphémère) |
+| CI réussie (PR ou push `main`) | kind → terraform apply → helm upgrade → smoke test |
 
 Étapes du job CD :
 
