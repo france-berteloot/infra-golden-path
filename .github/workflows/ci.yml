@@ -12,7 +12,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  TOOLING_VERSION: "1.0.0"
+  TOOLING_VERSION: "1.0.1"
 
 jobs:
   quality:
