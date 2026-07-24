@@ -19,7 +19,7 @@ jobs:
     name: Lint & validate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -76,7 +76,7 @@ jobs:
             tooling:ci \
             bash -lc 'mkdir -p dist && helm package helm/charts/demo-app -d dist && ls -la dist/'
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: github.event_name == 'push'
         with:
           name: helm-chart
