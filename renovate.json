@@ -6,6 +6,22 @@
     ":semanticCommitTypeAll(chore)"
   ],
   "labels": ["dependencies"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Pin docker-tooling image version in CI/CD and Makefile",
+      "fileMatch": [
+        "(^|/)\\.github/workflows/[^/]+\\.ya?ml$",
+        "(^|/)Makefile$"
+      ],
+      "matchStrings": [
+        "TOOLING_VERSION:\\s*\"(?<currentValue>[^\"]+)\"",
+        "ghcr\\.io/france-berteloot/docker-tooling:(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "ghcr.io/france-berteloot/docker-tooling"
+    }
+  ],
   "packageRules": [
     {
       "matchManagers": ["github-actions"],
@@ -18,8 +34,15 @@
       "automerge": false
     },
     {
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/france-berteloot/docker-tooling"],
+      "groupName": "docker-tooling",
+      "automerge": false
+    },
+    {
       "matchManagers": ["helmv3"],
-      "enabled": false
+      "enabled": false,
+      "description": "Disabled: helmv3 only tracks Chart.yaml dependencies (external charts). demo-app is a local chart with no deps — enable when we add chart dependencies."
     }
   ],
   "terraform": {
