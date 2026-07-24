@@ -13,9 +13,6 @@ permissions:
 env:
   REGISTRY: ghcr.io
   TOOLING_VERSION: "1.0.0"
-  # Non-root user in docker-tooling (UID/GID 1000)
-  TOOLING_UID: "1000"
-  TOOLING_GID: "1000"
 
 jobs:
   quality:
@@ -30,6 +27,8 @@ jobs:
         run: |
           owner=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           echo "TOOLING_IMAGE=${REGISTRY}/${owner}/docker-tooling:${TOOLING_VERSION}" >> "$GITHUB_ENV"
+          # Override image USER (1000): same UID as the runner so bind mounts work without chown.
+          echo "DOCKER_USER=$(id -u):$(id -g)" >> "$GITHUB_ENV"
 
       - uses: docker/login-action@v4
         with:
@@ -42,14 +41,12 @@ jobs:
           docker pull "${{ env.TOOLING_IMAGE }}"
           docker tag "${{ env.TOOLING_IMAGE }}" tooling:ci
 
-      # Workspace is owned by the runner user; the image runs as UID 1000 and needs write
-      # access for pre-commit fixers and terraform init (.terraform/).
-      - name: Align workspace ownership with tooling user
-        run: sudo chown -R "${TOOLING_UID}:${TOOLING_GID}" "${{ github.workspace }}"
-
       - name: Pre-commit
         run: |
           docker run --rm \
+            --user "${DOCKER_USER}" \
+            -e HOME=/tmp \
+            -e PRE_COMMIT_HOME=/tmp/pre-commit \
             -v "${{ github.workspace }}:/work" \
             -w /work \
             tooling:ci \
@@ -58,6 +55,8 @@ jobs:
       - name: Kubeconform
         run: |
           docker run --rm \
+            --user "${DOCKER_USER}" \
+            -e HOME=/tmp \
             -v "${{ github.workspace }}:/work" \
             -w /work \
             tooling:ci \
@@ -70,6 +69,8 @@ jobs:
         if: github.event_name == 'push'
         run: |
           docker run --rm \
+            --user "${DOCKER_USER}" \
+            -e HOME=/tmp \
             -v "${{ github.workspace }}:/work" \
             -w /work \
             tooling:ci \

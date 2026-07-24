@@ -26,7 +26,12 @@ tooling-pull:
 	docker pull $(TOOLING_IMAGE)
 
 tooling-shell: tooling-pull
-	docker run --rm -it -v "$(CURDIR):/work" -w /work $(TOOLING_IMAGE) bash
+	docker run --rm -it \
+		--user "$$(id -u):$$(id -g)" \
+		-e HOME=/tmp \
+		-v "$(CURDIR):/work" \
+		-w /work \
+		$(TOOLING_IMAGE) bash
 
 helm-lint:
 	helm lint helm/charts/demo-app
