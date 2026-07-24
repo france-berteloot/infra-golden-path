@@ -20,7 +20,7 @@ jobs:
     name: Deploy to kind (staging)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Set tooling image name
         run: |
