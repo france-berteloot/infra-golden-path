@@ -1,7 +1,7 @@
 .PHONY: help pre-commit tooling-pull tooling-shell helm-lint helm-template \
         setup-kind tf-init tf-plan tf-apply helm-install-staging
 
-TOOLING_IMAGE ?= ghcr.io/france-berteloot/docker-tooling:latest
+TOOLING_IMAGE ?= ghcr.io/france-berteloot/docker-tooling:1.0.0
 NAMESPACE ?= demo-app-staging
 
 help:

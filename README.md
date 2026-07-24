@@ -124,7 +124,7 @@ Déclenchée par `workflow_run` après succès de la CI (pas en parallèle).
 
 Le cluster kind est détruit à la fin du job — c'est un environnement éphémère de test d'intégration.
 
-> **Image tooling** — les jobs CI/CD consomment l'image [`docker-tooling`](https://github.com/france-berteloot/docker-tooling) (`ghcr.io/france-berteloot/docker-tooling:latest`).
+> **Image tooling** — les jobs CI/CD consomment l'image [`docker-tooling`](https://github.com/france-berteloot/docker-tooling) (`ghcr.io/france-berteloot/docker-tooling:1.0.0`).
 
 ## Structure du repo
 
