@@ -1,9 +1,8 @@
 name: CD
 
+# Called from CI after quality succeeds — appears as a PR check (unlike workflow_run).
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
+  workflow_call:
 
 permissions:
   contents: read
@@ -21,12 +20,9 @@ env:
 jobs:
   deploy-staging:
     name: Deploy to kind (staging)
-    if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Set tooling image name
         run: |

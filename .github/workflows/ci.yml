@@ -81,3 +81,13 @@ jobs:
           name: helm-chart
           path: dist/*.tgz
           retention-days: 7
+
+  # Same workflow run → CD shows as a PR check; only starts after quality succeeds.
+  deploy:
+    name: CD
+    needs: quality
+    uses: ./.github/workflows/cd.yml
+    permissions:
+      contents: read
+      packages: read
+    secrets: inherit
