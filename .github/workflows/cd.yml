@@ -12,6 +12,8 @@ permissions:
 env:
   REGISTRY: ghcr.io
   TOOLING_VERSION: "1.0.0"
+  TOOLING_UID: "1000"
+  TOOLING_GID: "1000"
   CLUSTER_NAME: golden-path
   NAMESPACE: demo-app-staging
   KUBECONFIG_CONTEXT: kind-golden-path
@@ -47,12 +49,24 @@ jobs:
           cluster_name: ${{ env.CLUSTER_NAME }}
           config: scripts/kind-config.yaml
 
+      # Non-root tooling user (UID 1000) needs write for terraform init and read for kubeconfig.
+      - name: Align workspace ownership with tooling user
+        run: sudo chown -R "${TOOLING_UID}:${TOOLING_GID}" "${{ github.workspace }}"
+
+      - name: Prepare kubeconfig for non-root tooling
+        run: |
+          mkdir -p /tmp/kube-ci
+          cp "${HOME}/.kube/config" /tmp/kube-ci/config
+          chmod 644 /tmp/kube-ci/config
+
       - name: Terraform apply
         run: |
           docker run --rm --network host \
             -v "${{ github.workspace }}:/work" \
-            -v "${HOME}/.kube:/root/.kube:ro" \
+            -v /tmp/kube-ci:/tmp/kube:ro \
             -w /work \
+            -e KUBECONFIG=/tmp/kube/config \
+            -e TF_VAR_kubeconfig_path=/tmp/kube/config \
             -e TF_VAR_kubeconfig_context="${{ env.KUBECONFIG_CONTEXT }}" \
             -e TF_VAR_namespace="${{ env.NAMESPACE }}" \
             -e TF_VAR_environment=staging \
@@ -65,9 +79,9 @@ jobs:
         run: |
           docker run --rm --network host \
             -v "${{ github.workspace }}:/work" \
-            -v "${HOME}/.kube:/root/.kube:ro" \
+            -v /tmp/kube-ci:/tmp/kube:ro \
             -w /work \
-            -e KUBECONFIG=/root/.kube/config \
+            -e KUBECONFIG=/tmp/kube/config \
             tooling:ci \
             helm upgrade --install demo-app helm/charts/demo-app \
               -f helm/charts/demo-app/values-staging.yaml \
