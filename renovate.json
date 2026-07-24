@@ -6,6 +6,8 @@
     ":semanticCommitTypeAll(chore)"
   ],
   "labels": ["dependencies"],
+  "reviewers": ["france-berteloot"],
+  "assignees": ["france-berteloot"],
   "customManagers": [
     {
       "customType": "regex",
